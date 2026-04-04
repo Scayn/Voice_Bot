@@ -90,9 +90,34 @@ Available placeholders:
 ## Example Setup
 
 Here's a recommended setup for a gaming server:
-/vb addchannel #[+]General
-/vb addchannel #[+]Duos amount 2 name Duos
-/vb addchannel #[+]Trios amount 3 name Trios
-/vb addchannel [+]Quads amount 4 name Quads
-/vb addname Mercury Addicts
-/vb addname {user} Channel {number}
+/vb addchannel #[+]General\
+/vb addchannel #[+]Duos amount 2 name Duos\
+/vb addchannel #[+]Trios amount 3 name Trios\
+/vb addchannel [+]Quads amount 4 name Quads\
+/vb addname {user} Channel {number}\
+
+This gives your members four lobby channels to choose from depending on how many people they're playing with, while the general channel gets a name based on user joining.
+
+---
+
+## FAQ
+
+**Can I rename my room after it's created?**
+Yes! You can rename it manually in Discord like any other channel, as long as you have the permission to do so.
+
+**What happens when everyone leaves?**
+The channel is automatically deleted by the bot. Nothing is saved or logged.
+
+**Why didn't the bot move me?**
+Make sure you joined a channel that has been configured as a lobby with `/vb addchannel` or `/vb setup`. Regular voice channels won't trigger the bot.
+
+**The bot created my room but didn't move me in.**
+This is usually a permissions issue. Ask your server admin to make sure the bot has the **Move Members** permission.
+
+---
+
+## Privacy
+
+VoiceBot only stores voice channel IDs and name preferences per server.
+It does not collect usernames, user IDs, or any personal information.
+All server data can be removed at any time using `/vb remove`.
