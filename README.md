@@ -90,9 +90,9 @@ Available placeholders:
 ## Example Setup
 
 Here's a recommended setup for a gaming server:
-/vb addchannel #[+]General\
-/vb addchannel #[+]Duos amount 2 name Duos\
-/vb addchannel #[+]Trios amount 3 name Trios\
+/vb addchannel [+]General\
+/vb addchannel [+]Duos amount 2 name Duos\
+/vb addchannel [+]Trios amount 3 name Trios\
 /vb addchannel [+]Quads amount 4 name Quads\
 /vb addname {user} Channel {number}
 
