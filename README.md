@@ -94,7 +94,7 @@ Here's a recommended setup for a gaming server:
 /vb addchannel #[+]Duos amount 2 name Duos\
 /vb addchannel #[+]Trios amount 3 name Trios\
 /vb addchannel [+]Quads amount 4 name Quads\
-/vb addname {user} Channel {number}\
+/vb addname {user} Channel {number}
 
 This gives your members four lobby channels to choose from depending on how many people they're playing with, while the general channel gets a name based on user joining.
 
