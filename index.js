@@ -172,7 +172,11 @@ client.once('clientReady', async () => {
       .addSubcommand(sub =>
         sub.setName('listchannels')
           .setDescription('List all configured dynamic voice channels')
-      ),
+      )
+      .addSubcommand(sub =>
+        sub.setName('status')
+            .setDescription('Show the current bot configuration for this server')
+    ),
   ];
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -367,6 +371,32 @@ client.on('interactionCreate', async interaction => {
 
     return interaction.reply({ content: `**Dynamic channels:**\n${list}`, flags: 64 });
   }
+  // ── /vb status ──
+    if (sub === 'status') {
+    const guildConfig = config[interaction.guildId];
+
+    if (!guildConfig) {
+        return interaction.reply({ content: 'No configuration found for this server.', flags: 64 });
+    }
+
+    const pool = guildConfig.namePool ?? [];
+    const channels = guildConfig.dynamicChannels ?? {};
+    const entries = Object.entries(channels);
+
+    const channelList = entries.length > 0
+        ? entries.map(([id, cfg]) =>
+            `<#${id}> — limit: **${cfg.userLimit === 0 ? 'unlimited' : cfg.userLimit}** — naming: **${cfg.fixedName ?? cfg.namingMode ?? 'pool'}**`
+        ).join('\n')
+        : 'None configured';
+
+    return interaction.reply({
+        content: `**VoiceBot status for this server:**\n\n` +
+                `🔊 **Dynamic channels:**\n${channelList}\n\n` +
+                `🎲 **Name pool:** ${pool.length === 0 ? 'Empty' : pool.join(', ')}\n\n` +
+                `📝 **Name template:** ${guildConfig.nameTemplate ?? '{user}\'s Room'}`,
+        flags: 64,
+    });
+    }
 });
 
 // ─── Voice state handler ──────────────────────────────────────────────────────
