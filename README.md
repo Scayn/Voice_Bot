@@ -19,16 +19,16 @@ That's it — no commands needed to use the basic functionality!
 ---
 
 ## Server Admin Commands
-\
+
 All commands below require the **Manage Server** permission.\
-\
-### Initial Setup\
-\
+
+### Initial Setup
+
 Before the bot does anything, an admin needs to configure at least one lobby channel:\
-\
+
 /vb setup #channel\
 Users who join this channel will automatically get their own voice room.\
-\
+
 To disable the bot on your server:
 /vb remove
 ---
