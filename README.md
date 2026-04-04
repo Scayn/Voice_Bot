@@ -38,12 +38,16 @@ To disable the bot on your server:
 You can have multiple lobby channels, each with different settings:\
 /vb addchannel #channel\
 Adds a lobby channel using the random name pool for created rooms.\
+\
 /vb addchannel #channel amount 2\
 Adds a lobby channel where created rooms are limited to 2 users.\
+\
 /vb addchannel #channel amount 2 name Duos\
 Adds a lobby channel with a 2 user limit and names all created rooms "Duos".\
+\
 /vb removechannel #channel\
 Removes a lobby channel configuration.\
+\
 /vb listchannels\
 Shows all configured lobby channels, their user limits and naming mode.
 
