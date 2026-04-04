@@ -19,31 +19,31 @@ That's it — no commands needed to use the basic functionality!
 ---
 
 ## Server Admin Commands
-
-All commands below require the **Manage Server** permission.
-
-### Initial Setup
-
-Before the bot does anything, an admin needs to configure at least one lobby channel:
-
+\
+All commands below require the **Manage Server** permission.\
+\
+### Initial Setup\
+\
+Before the bot does anything, an admin needs to configure at least one lobby channel:\
+\
 /vb setup #channel\
-Users who join this channel will automatically get their own voice room.
-
+Users who join this channel will automatically get their own voice room.\
+\
 To disable the bot on your server:
 /vb remove
 ---
 
 ### Managing Lobby Channels
 
-You can have multiple lobby channels, each with different settings:
+You can have multiple lobby channels, each with different settings:\
 /vb addchannel #channel\
-Adds a lobby channel using the random name pool for created rooms.
+Adds a lobby channel using the random name pool for created rooms.\
 /vb addchannel #channel amount 2\
-Adds a lobby channel where created rooms are limited to 2 users.
+Adds a lobby channel where created rooms are limited to 2 users.\
 /vb addchannel #channel amount 2 name Duos\
-Adds a lobby channel with a 2 user limit and names all created rooms "Duos".
+Adds a lobby channel with a 2 user limit and names all created rooms "Duos".\
 /vb removechannel #channel\
-Removes a lobby channel configuration.
+Removes a lobby channel configuration.\
 /vb listchannels\
 Shows all configured lobby channels, their user limits and naming mode.
 
