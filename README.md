@@ -26,7 +26,7 @@ All commands below require the **Manage Server** permission.
 
 Before the bot does anything, an admin needs to configure at least one lobby channel:
 
-/vb setup #channel
+/vb setup #channel\
 Users who join this channel will automatically get their own voice room.
 
 To disable the bot on your server:
@@ -36,15 +36,15 @@ To disable the bot on your server:
 ### Managing Lobby Channels
 
 You can have multiple lobby channels, each with different settings:
-/vb addchannel #channel
+/vb addchannel #channel\
 Adds a lobby channel using the random name pool for created rooms.
-/vb addchannel #channel amount 2
+/vb addchannel #channel amount 2\
 Adds a lobby channel where created rooms are limited to 2 users.
-/vb addchannel #channel amount 2 name Duos
+/vb addchannel #channel amount 2 name Duos\
 Adds a lobby channel with a 2 user limit and names all created rooms "Duos".
-/vb removechannel #channel
+/vb removechannel #channel\
 Removes a lobby channel configuration.
-/vb listchannels
+/vb listchannels\
 Shows all configured lobby channels, their user limits and naming mode.
 
 ---
@@ -52,13 +52,13 @@ Shows all configured lobby channels, their user limits and naming mode.
 ### Managing Room Names
 
 The bot can pick random fun names for created rooms. You manage the pool with:
-/vb addname Bowling Sex 🎳
+/vb addname Mercury Addicts\
 Adds a name to the random pool.
-/vb listnames
+/vb listnames\
 Shows all names currently in the pool, numbered.
-/vb removename 3
+/vb removename 3\
 Removes name number 3 from the pool.
-/vb clearnames
+/vb clearnames\
 Removes all names in the pool.
 
 The bot will never pick the same name twice in a row, cycling through all names before repeating.
