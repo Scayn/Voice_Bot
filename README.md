@@ -55,16 +55,19 @@ Shows all configured lobby channels, their user limits and naming mode.
 
 ### Managing Room Names
 
-The bot can pick random fun names for created rooms. You manage the pool with:
+The bot can pick random fun names for created rooms. You manage the pool with:\
 /vb addname Mercury Addicts\
-Adds a name to the random pool.
+Adds a name to the random pool.\
+\
 /vb listnames\
-Shows all names currently in the pool, numbered.
+Shows all names currently in the pool, numbered.\
+\
 /vb removename 3\
-Removes name number 3 from the pool.
+Removes name number 3 from the pool.\
+\
 /vb clearnames\
-Removes all names in the pool.
-
+Removes all names in the pool.\
+\
 The bot will never pick the same name twice in a row, cycling through all names before repeating.
 
 ---
