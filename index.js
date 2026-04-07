@@ -65,7 +65,10 @@ function resolveChannelName(guildConfig, member, guild, channelConfig = null) {
   // Use pool if channel is set to pool mode and pool exists
   const namingMode = channelConfig?.namingMode ?? 'pool';
   if (namingMode === 'pool' && guildConfig.namePool && guildConfig.namePool.length > 0) {
-    return getNextName(guild.id, guildConfig.namePool);
+    const poolName = getNextName(guild.id, guildConfig.namePool);
+    return poolName
+      .replace('{user}', member?.displayName ?? 'User')
+      .replace('{number}', roomCount);
   }
 
   // Use template
