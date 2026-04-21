@@ -9,6 +9,8 @@ Made to remove clutter.
 
 ## Getting Started
 
+Invite the bot here: https://discord.com/oauth2/authorize?client_id=1489589613449187359
+
 1. Find a channel to make "dynamic" (e.g. [+] New Channel)
 2. Join it like any normal voice channel
 3. The bot will instantly create a new channel and move you in
