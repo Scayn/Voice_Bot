@@ -18,6 +18,8 @@ const client = new Client({
 
 const CONFIG_FILE = './config.json';
 const dynamicChannels = new Set();
+const lockedChannels = new Map(); // channelId -> Set of member IDs allowed in while locked
+const bannedUsers = new Map(); // channelId -> Set of member IDs barred for the channel's lifetime
 
 // ─── Config helpers ───────────────────────────────────────────────────────────
 
@@ -179,7 +181,35 @@ client.once('clientReady', async () => {
       .addSubcommand(sub =>
         sub.setName('status')
             .setDescription('Show the current bot configuration for this server')
-    ),
+      )
+      .addSubcommand(sub =>
+        sub.setName('setlimit')
+          .setDescription('Temporarily set a user limit on your current voice channel (this session only)')
+          .addIntegerOption(opt =>
+            opt.setName('number')
+              .setDescription('Max users in the channel (0 = unlimited)')
+              .setRequired(true)
+              .setMinValue(0)
+              .setMaxValue(99)
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName('lockchannel')
+          .setDescription('Lock your current voice channel so only people already in it can stay')
+      )
+      .addSubcommand(sub =>
+        sub.setName('unlockchannel')
+          .setDescription('Unlock your current voice channel')
+      )
+      .addSubcommand(sub =>
+        sub.setName('lockout_user')
+          .setDescription('Bar a user from your current voice channel for as long as it exists')
+          .addUserOption(opt =>
+            opt.setName('user')
+              .setDescription('The user to lock out')
+              .setRequired(true)
+          )
+      ),
   ];
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -198,6 +228,68 @@ client.on('interactionCreate', async interaction => {
   if (interaction.commandName !== 'vb') return;
 
   const sub = interaction.options.getSubcommand();
+
+  // These act on the temp channel the user is currently in, for this session
+  // only — no server-management permission required, and nothing is persisted.
+  const sessionSubcommands = ['setlimit', 'lockchannel', 'unlockchannel', 'lockout_user'];
+
+  if (sessionSubcommands.includes(sub)) {
+    const voiceChannel = interaction.member.voice.channel;
+    if (!voiceChannel || !dynamicChannels.has(voiceChannel.id)) {
+      return interaction.reply({
+        content: '❌ You must be in a temporary voice channel created by this bot to use this.',
+        ephemeral: true,
+      });
+    }
+
+    if (sub === 'setlimit') {
+      const limit = interaction.options.getInteger('number');
+      await voiceChannel.setUserLimit(limit);
+      return interaction.reply({
+        content: `✅ Channel limit set to **${limit === 0 ? 'unlimited' : limit}** for this session.`,
+        ephemeral: true,
+      });
+    }
+
+    if (sub === 'lockchannel') {
+      lockedChannels.set(voiceChannel.id, new Set(voiceChannel.members.keys()));
+      return interaction.reply({
+        content: '🔒 Channel locked. Only people already in it can stay — no one new can join.',
+        ephemeral: true,
+      });
+    }
+
+    if (sub === 'unlockchannel') {
+      lockedChannels.delete(voiceChannel.id);
+      return interaction.reply({
+        content: '🔓 Channel unlocked. Anyone can join again.',
+        ephemeral: true,
+      });
+    }
+
+    if (sub === 'lockout_user') {
+      const target = interaction.options.getUser('user');
+
+      if (target.id === interaction.user.id) {
+        return interaction.reply({ content: "❌ You can't lock yourself out.", ephemeral: true });
+      }
+
+      const banned = bannedUsers.get(voiceChannel.id) ?? new Set();
+      banned.add(target.id);
+      bannedUsers.set(voiceChannel.id, banned);
+
+      const targetMember = voiceChannel.members.get(target.id);
+      if (targetMember) {
+        await targetMember.voice.disconnect('Locked out of this voice channel.');
+      }
+
+      return interaction.reply({
+        content: `🚫 **${target.username}** is locked out of this channel for as long as it exists.`,
+        ephemeral: true,
+      });
+    }
+  }
+
   const config = loadConfig();
 
   if (!interaction.memberPermissions.has('ManageGuild')) {
@@ -438,12 +530,30 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     }
   }
 
+    // Enforce locked channels: kick anyone not present when the channel was locked
+    if (newState.channelId && lockedChannels.has(newState.channelId)) {
+      const allowedMembers = lockedChannels.get(newState.channelId);
+      if (!allowedMembers.has(newState.member.id)) {
+        await newState.member.voice.disconnect('This voice channel is locked.');
+      }
+    }
+
+    // Enforce per-channel lockouts: kick anyone banned from this channel
+    if (newState.channelId && bannedUsers.has(newState.channelId)) {
+      const banned = bannedUsers.get(newState.channelId);
+      if (banned.has(newState.member.id)) {
+        await newState.member.voice.disconnect('You are locked out of this voice channel.');
+      }
+    }
+
     // Cleanup: delete dynamic channel when empty
     if (oldState.channelId && dynamicChannels.has(oldState.channelId)) {
     const channel = oldState.channel;
     if (channel && channel.members.size === 0) {
         await channel.delete();
         dynamicChannels.delete(oldState.channelId);
+        lockedChannels.delete(oldState.channelId);
+        bannedUsers.delete(oldState.channelId);
 
         console.log(`Channel deleted. Remaining dynamic channels: ${dynamicChannels.size}`);
         console.log(`Current dynamic channel IDs: ${[...dynamicChannels].join(', ') || 'none'}`);
