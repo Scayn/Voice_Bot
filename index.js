@@ -17,7 +17,8 @@ const client = new Client({
 });
 
 const CONFIG_FILE = './config.json';
-const dynamicChannels = new Set();
+const TEMP_CHANNELS_FILE = './temp-channels.json';
+const dynamicChannels = loadTempChannels();
 const lockedChannels = new Map(); // channelId -> Set of member IDs allowed in while locked
 const bannedUsers = new Map(); // channelId -> Set of member IDs barred for the channel's lifetime
 
@@ -30,6 +31,57 @@ function loadConfig() {
 
 function saveConfig(config) {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+}
+
+// Temp channel IDs are persisted so channels created before a restart/crash
+// are still cleaned up afterwards.
+function loadTempChannels() {
+  try {
+    return new Set(JSON.parse(fs.readFileSync(TEMP_CHANNELS_FILE, 'utf8')));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveTempChannels() {
+  fs.writeFileSync(TEMP_CHANNELS_FILE, JSON.stringify([...dynamicChannels], null, 2));
+}
+
+function forgetTempChannel(channelId) {
+  dynamicChannels.delete(channelId);
+  lockedChannels.delete(channelId);
+  bannedUsers.delete(channelId);
+  saveTempChannels();
+}
+
+// Delete a temp channel; treat "already gone" (10003 Unknown Channel) as success.
+async function deleteTempChannel(channel) {
+  try {
+    await channel.delete();
+  } catch (err) {
+    if (err.code !== 10003) throw err;
+  }
+  forgetTempChannel(channel.id);
+}
+
+// On startup: remove temp channels that were left empty while the bot was offline.
+async function sweepTempChannels() {
+  for (const channelId of [...dynamicChannels]) {
+    try {
+      const channel = await client.channels.fetch(channelId).catch(err => {
+        if (err.code === 10003) return null;
+        throw err;
+      });
+      if (!channel) {
+        forgetTempChannel(channelId);
+      } else if (channel.members.size === 0) {
+        await deleteTempChannel(channel);
+        console.log(`Startup sweep: deleted empty temp channel ${channel.name} (${channelId})`);
+      }
+    } catch (err) {
+      console.error(`Startup sweep failed for ${channelId}:`, err);
+    }
+  }
 }
 
 // ─── Channel name resolver ────────────────────────────────────────────────────
@@ -219,6 +271,9 @@ client.once('clientReady', async () => {
   );
 
   console.log('Slash commands registered.');
+
+  await sweepTempChannels();
+  console.log(`Tracking ${dynamicChannels.size} temp channel(s) after startup sweep.`);
 });
 
 // ─── Interaction handler ──────────────────────────────────────────────────────
@@ -497,6 +552,14 @@ client.on('interactionCreate', async interaction => {
 // ─── Voice state handler ──────────────────────────────────────────────────────
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
+  try {
+    await handleVoiceStateUpdate(oldState, newState);
+  } catch (err) {
+    console.error('voiceStateUpdate error:', err);
+  }
+});
+
+async function handleVoiceStateUpdate(oldState, newState) {
   const config = loadConfig();
   const guildConfig = config[newState.guild.id];
 
@@ -526,7 +589,14 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
       });
 
       dynamicChannels.add(newChannel.id);
-      await member.voice.setChannel(newChannel);
+      saveTempChannels();
+      try {
+        await member.voice.setChannel(newChannel);
+      } catch (err) {
+        // User left before we could move them — don't leave an empty channel behind
+        await deleteTempChannel(newChannel);
+        throw err;
+      }
     }
   }
 
@@ -550,10 +620,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     if (oldState.channelId && dynamicChannels.has(oldState.channelId)) {
     const channel = oldState.channel;
     if (channel && channel.members.size === 0) {
-        await channel.delete();
-        dynamicChannels.delete(oldState.channelId);
-        lockedChannels.delete(oldState.channelId);
-        bannedUsers.delete(oldState.channelId);
+        await deleteTempChannel(channel);
 
         console.log(`Channel deleted. Remaining dynamic channels: ${dynamicChannels.size}`);
         console.log(`Current dynamic channel IDs: ${[...dynamicChannels].join(', ') || 'none'}`);
@@ -564,7 +631,11 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
     }
-});
+}
+
+// Never let a stray API error crash the process (that orphans temp channels).
+process.on('unhandledRejection', err => console.error('Unhandled rejection:', err));
+client.on('error', err => console.error('Client error:', err));
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
